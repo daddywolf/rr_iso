@@ -69,7 +69,13 @@ jobs:
 
           echo "成功找到 IMG 文件: $IMG_FILE_PATH"
           echo "正在将 $IMG_FILE_PATH 转换为 ${{ env.ISO_FILE }}..."
-          qemu-img convert -f raw -O iso "$IMG_FILE_PATH" "${{ env.ISO_FILE }}"
+
+          # ==========================================================
+          # 修正之处：移除了 "-O iso" 参数。
+          # 这会执行一个 raw-to-raw 的转换，正是我们所需要的。
+          # ==========================================================
+          qemu-img convert -f raw "$IMG_FILE_PATH" "${{ env.ISO_FILE }}"
+
           echo "转换完成。"
 
       # 第六步：创建 GitHub Release 并上传转换后的 ISO 文件
