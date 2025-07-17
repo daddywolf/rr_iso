@@ -1,0 +1,84 @@
+# ==============================================================================
+# GitHub Action: 自动构建并发布 ISO 文件
+#
+# 功能:
+# 1. 从指定 URL 下载一个 .img.zip 压缩包。
+# 2. 解压文件。
+# 3. 将 .img 文件转换为 .iso 文件。
+# 4. 创建一个新的 GitHub Release，并将转换后的 .iso 文件作为附件上传。
+# ==============================================================================
+
+name: Build and Release ISO
+
+# 触发条件：
+# 1. workflow_dispatch: 允许在 Actions 页面手动点击 "Run workflow" 按钮来触发。
+# 2. push: 当有代码推送到 main 分支时自动触发（可选）。
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+# 定义环境变量，方便统一修改
+env:
+  RR_VERSION: "25.6.5"
+  DOWNLOAD_URL: "https://github.com/RROrg/rr/releases/download/25.6.5/rr-25.6.5.img.zip"
+  ZIP_FILE: "rr-25.6.5.img.zip"
+  IMG_FILE: "rr-25.6.5.img"
+  ISO_FILE: "rr-25.6.5.iso"
+
+jobs:
+  build-and-release:
+    # 使用最新的 Ubuntu 虚拟机环境
+    runs-on: ubuntu-latest
+
+    # 赋予 GITHUB_TOKEN 创建 Release 的权限
+    permissions:
+      contents: write
+
+    steps:
+      # 第一步：检出你的仓库代码，以便工作流可以访问它
+      - name: 检出仓库代码 (Checkout repository)
+        uses: actions/checkout@v4
+
+      # 第二步：安装转换和解压所需的工具
+      - name: 安装依赖工具 (Install dependencies)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-utils unzip
+        
+      # 第三步：下载指定的 ZIP 压缩包
+      - name: 下载 Release 压缩包 (Download release package)
+        run: wget ${{ env.DOWNLOAD_URL }}
+
+      # 第四步：解压文件
+      - name: 解压文件 (Unzip the package)
+        run: unzip ${{ env.ZIP_FILE }}
+
+      # 第五步：将 IMG 文件转换为 ISO 文件
+      - name: 转换 IMG 为 ISO (Convert IMG to ISO)
+        run: |
+          echo "正在将 ${{ env.IMG_FILE }} 转换为 ${{ env.ISO_FILE }}..."
+          qemu-img convert -f raw -O iso ${{ env.IMG_FILE }} ${{ env.ISO_FILE }}
+          echo "转换完成。"
+
+      # 第六步：创建 GitHub Release 并上传转换后的 ISO 文件
+      - name: 创建 Release 并上传 ISO 文件 (Create Release and Upload ISO)
+        uses: softprops/action-gh-release@v2
+        with:
+          # 新 Release 的标签名，例如 "iso-v25.6.5"
+          tag_name: "iso-v${{ env.RR_VERSION }}"
+          
+          # 新 Release 的标题
+          name: "ISO Build - Version ${{ env.RR_VERSION }}"
+          
+          # 新 Release 的描述内容，支持 Markdown
+          body: |
+            ## ISO 文件自动构建
+
+            这是由 GitHub Action 自动构建的 ISO 文件。
+
+            - **原始版本**: [rr-${{ env.RR_VERSION }}](https://github.com/RROrg/rr/releases/tag/${{ env.RR_VERSION }})
+            - **原始文件**: `${{ env.ZIP_FILE }}`
+          
+          # 要上传的文件列表
+          files: ${{ env.ISO_FILE }}
