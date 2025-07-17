@@ -9,7 +9,7 @@ env:
   ZIP_FILE: "rr-25.6.5.img.zip"
   ISO_FILE: "rr-25.6.5.iso"
   # 重要：在这里填入你的 Vultr 存储桶名称
-  VULTR_BUCKET_NAME: "your-bucket-name" 
+  VULTR_BUCKET_NAME: "test111" 
 
 jobs:
   build-and-upload:
@@ -54,7 +54,7 @@ jobs:
           access_key = ${VULTR_ACCESS_KEY}
           secret_key = ${VULTR_SECRET_KEY}
           host_base = ams1.vultrobjects.com
-          host_bucket = test111.ams1.vultrobjects.com
+          host_bucket = %(bucket)s.ams1.vultrobjects.com
           use_https = True
           EOF
 
