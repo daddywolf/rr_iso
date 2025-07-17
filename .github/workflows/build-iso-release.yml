@@ -41,16 +41,6 @@ jobs:
           qemu-img convert -f raw "$IMG_FILE_PATH" "${{ env.ISO_FILE }}"
           echo "转换完成。"
 
-      - name: 分割大文件 (Split large file if needed)
-        run: |
-          ISO_SIZE=$(stat -c%s "${{ env.ISO_FILE }}")
-          LIMIT=2000000000 
-          if [ $ISO_SIZE -gt $LIMIT ]; then
-            echo "ISO 文件大于 2GB，正在将其分割..."
-            split -b 1800M -d "${{ env.ISO_FILE }}" "${{ env.ISO_FILE }}."
-            rm "${{ env.ISO_FILE }}"
-          fi
-
       # 新增！最后一步：上传到 Vultr 对象存储
       - name: 上传文件到 Vultr S3 (Upload to Vultr S3)
         env:
@@ -69,8 +59,7 @@ jobs:
           EOF
 
           echo "正在上传文件..."
-          # 使用通配符上传 .iso 或其分割文件 (.iso.00, .iso.01, ...)
           # -P 参数使文件公开可读
-          s3cmd put --acl-public --recursive ${{ env.ISO_FILE }}* s3://${{ env.VULTR_BUCKET_NAME }}/
+          s3cmd put --acl-public --recursive ${{ env.ISO_FILE }} s3://${{ env.VULTR_BUCKET_NAME }}/
 
           echo "上传成功！文件已上传至 s3://${{ env.VULTR_BUCKET_NAME }}/"
