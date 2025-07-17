@@ -57,8 +57,19 @@ jobs:
       # 第五步：将 IMG 文件转换为 ISO 文件
       - name: 转换 IMG 为 ISO (Convert IMG to ISO)
         run: |
-          echo "正在将 ${{ env.IMG_FILE }} 转换为 ${{ env.ISO_FILE }}..."
-          qemu-img convert -f raw -O iso ${{ env.IMG_FILE }} ${{ env.ISO_FILE }}
+          # 自动在当前目录及所有子目录中查找第一个 .img 文件
+          IMG_FILE_PATH=$(find . -type f -name "*.img" | head -n 1)
+
+          # 检查是否找到了文件
+          if [ -z "$IMG_FILE_PATH" ]; then
+            echo "错误：解压后未在任何位置找到 .img 文件！"
+            ls -R # 再次列出文件以供调试
+            exit 1
+          fi
+
+          echo "成功找到 IMG 文件: $IMG_FILE_PATH"
+          echo "正在将 $IMG_FILE_PATH 转换为 ${{ env.ISO_FILE }}..."
+          qemu-img convert -f raw -O iso "$IMG_FILE_PATH" "${{ env.ISO_FILE }}"
           echo "转换完成。"
 
       # 第六步：创建 GitHub Release 并上传转换后的 ISO 文件
